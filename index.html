@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Clues Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background-color: #0f0b1e; /* Deep dark purple */
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: white;
+        }
+
+        /* Neon Effects */
+        .neon-border {
+            box-shadow: 0 0 10px rgba(5, 217, 232, 0.5), inset 0 0 5px rgba(5, 217, 232, 0.2);
+            border: 2px solid #05d9e8;
+        }
+        
+        .neon-text-pink {
+            text-shadow: 0 0 5px #ff2a6d, 0 0 10px #ff2a6d;
+            color: #fff;
+        }
+        
+        .neon-text-cyan {
+            text-shadow: 0 0 5px #05d9e8, 0 0 10px #05d9e8;
+            color: #fff;
+        }
+
+        .input-box {
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #ffde59; /* Yellowish border */
+            box-shadow: 0 0 5px #ffde59;
+            transition: all 0.2s;
+        }
+        
+        .input-box.filled {
+            background: rgba(255, 222, 89, 0.1);
+        }
+
+        .input-box.active {
+            border-color: #fff;
+            box-shadow: 0 0 10px #fff;
+        }
+
+        /* Neon Buttons */
+        .btn-neon-pink {
+            border: 2px solid #ff2a6d;
+            color: #fff;
+            box-shadow: 0 0 5px #ff2a6d;
+            background: rgba(0,0,0,0.6);
+        }
+        .btn-neon-pink:hover {
+            background: #ff2a6d;
+            color: #000;
+            box-shadow: 0 0 15px #ff2a6d;
+        }
+
+        .btn-neon-yellow {
+            border: 2px solid #ffde59;
+            color: #fff;
+            box-shadow: 0 0 5px #ffde59;
+            background: rgba(0,0,0,0.6);
+        }
+        .btn-neon-yellow:hover {
+            background: #ffde59;
+            color: #000;
+            box-shadow: 0 0 15px #ffde59;
+        }
+
+        /* Progress Bar */
+        .progress-gradient {
+            background: linear-gradient(90deg, #ff2a6d, #ffde59, #05d9e8);
+        }
+
+        /* Leaderboard Table */
+        .glass-table {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-table th {
+            background: rgba(5, 217, 232, 0.2);
+            color: #05d9e8;
+        }
+        .glass-table tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Animations */
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Audio Element -->
+    <audio id="bg-music" loop>
+        <source src="https://ia800504.us.archive.org/33/items/SuperMarioBros.ThemeMusic/SuperMarioBros.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Game Card -->
+    <div id="game-container" class="w-full max-w-2xl bg-slate-900/90 backdrop-blur-xl rounded-3xl border-2 border-cyan-400/50 shadow-[0_0_30px_rgba(5,217,232,0.3)] overflow-hidden relative min-h-[600px] flex flex-col p-8">
+        
+        <!-- Explanation Modal -->
+        <div id="explanation-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 fade-in">
+            <div class="bg-slate-900 border-2 border-[#05d9e8] p-6 rounded-2xl text-center max-w-sm w-full shadow-[0_0_30px_rgba(5,217,232,0.4)] relative">
+                <h3 class="text-3xl font-bold text-[#05d9e8] mb-4 uppercase tracking-widest neon-text-cyan">Correct!</h3>
+                <div class="w-16 h-1 bg-[#ffde59] mx-auto mb-4 rounded-full"></div>
+                <p id="explanation-text" class="text-white text-lg mb-8 leading-relaxed font-medium"></p>
+                <button onclick="nextLevel()" class="btn-neon-pink w-full py-3 rounded-lg font-bold text-xl tracking-widest uppercase hover:scale-105 transition-transform">
+                    Next Level ➡
+                </button>
+            </div>
+        </div>
+
+        <!-- Music Toggle -->
+        <button onclick="toggleMusic()" id="music-btn" class="absolute top-4 right-4 text-cyan-400 hover:text-white transition-colors z-40 text-xl md:text-2xl p-2 rounded-full hover:bg-white/10">
+            🔇
+        </button>
+
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-wider mb-2">
+                <span class="text-3xl align-middle mr-2">🎮</span>
+                <span class="neon-text-pink">Emoji</span> <span class="neon-text-cyan">Clues</span>
+                <span class="text-3xl align-middle ml-2">🎮</span>
+            </h1>
+            <p class="text-yellow-400 font-bold tracking-wide text-sm uppercase">Decode the Online Safety Tip</p>
+        </div>
+
+        <!-- 1. START SCREEN -->
+        <div id="start-screen" class="flex-grow flex flex-col items-center justify-center space-y-8 z-10 w-full">
+            <div class="p-6 border border-white/10 rounded-xl bg-black/20 text-center max-w-md w-full">
+                <h3 class="text-cyan-400 font-bold mb-4 text-xl">MISSION BRIEFING</h3>
+                <ul class="text-left space-y-3 text-gray-300 text-sm mb-6">
+                    <li class="flex items-center"><span class="mr-3 text-yellow-400">🏆</span> Rank #1 on the Leaderboard</li>
+                    <li class="flex items-center"><span class="mr-3 text-yellow-400">⚡</span> 12 Questions - Fastest Time Wins</li>
+                    <li class="flex items-center"><span class="mr-3 text-yellow-400">⌨️</span> Enter Class Name Below:</li>
+                </ul>
+                
+                <input type="text" id="class-name-input" 
+                    class="w-full bg-slate-800 border-2 border-cyan-500 rounded-lg p-3 text-white text-center font-bold text-lg mb-4 focus:outline-none focus:shadow-[0_0_15px_#05d9e8] placeholder-gray-500"
+                    placeholder="ENTER CLASS NAME">
+                
+                <div id="name-error" class="text-red-500 text-sm font-bold h-5 mb-2 opacity-0 transition-opacity">Name required!</div>
+            </div>
+            
+            <button onclick="startGame()" class="px-12 py-4 btn-neon-pink rounded-lg font-bold text-2xl tracking-widest uppercase transition-all transform hover:scale-105">
+                Start Challenge
+            </button>
+        </div>
+
+        <!-- 2. GAME SCREEN (Hidden by default) -->
+        <div id="game-screen" class="hidden flex-grow flex flex-col items-center w-full z-10">
+            
+            <!-- Clue Section -->
+            <div class="flex-grow flex flex-col items-center justify-center w-full space-y-6">
+                
+                <!-- The Clue -->
+                <div class="text-center">
+                    <div id="clue-display" class="text-3xl md:text-5xl font-medium text-white mb-2 flex flex-wrap justify-center items-center gap-2">
+                        <!-- Content injected by JS -->
+                    </div>
+                    <div id="letter-count" class="text-orange-400 font-bold tracking-widest text-lg">
+                        (4)
+                    </div>
+                </div>
+
+                <!-- Input Boxes -->
+                <div class="relative w-full flex justify-center" onclick="focusInput()">
+                    <input type="text" id="hidden-input" class="opacity-0 absolute top-0 left-0 w-full h-full cursor-default" autocomplete="off" spellcheck="false">
+                    
+                    <div id="input-container" class="flex gap-2 md:gap-3 flex-wrap justify-center">
+                        <!-- Boxes injected by JS -->
+                    </div>
+                </div>
+
+                <!-- Feedback Message -->
+                <div id="feedback-msg" class="h-6 text-sm font-bold tracking-wider text-center neon-text-pink opacity-0 transition-opacity"></div>
+
+                <!-- Hint Text -->
+                <div id="hint-display" class="h-6 text-sm text-yellow-300 font-mono text-center hidden"></div>
+
+            </div>
+
+            <!-- Controls Row -->
+            <div class="w-full flex justify-center gap-4 mb-8 mt-4">
+                <button onclick="submitAnswer()" class="btn-neon-pink px-8 py-3 rounded font-bold uppercase tracking-wider text-sm w-32">
+                    Submit
+                </button>
+                <button onclick="useHint()" id="hint-btn" class="btn-neon-yellow px-6 py-3 rounded font-bold uppercase tracking-wider text-sm w-32">
+                    Hint (5)
+                </button>
+                <button onclick="skipLevel()" class="btn-neon-yellow px-6 py-3 rounded font-bold uppercase tracking-wider text-sm w-32">
+                    Skip
+                </button>
+            </div>
+
+            <!-- Footer Stats -->
+            <div class="w-full mt-auto">
+                <div class="flex justify-between items-end mb-2 text-yellow-400 font-mono font-bold text-lg px-2">
+                    <div>Score: <span id="score">0</span></div>
+                    <div class="flex items-center">⏱️ <span id="timer">0</span>s</div>
+                </div>
+                <!-- Progress Bar Background -->
+                <div class="w-full h-3 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
+                    <!-- Actual Bar -->
+                    <div id="progress-bar" class="h-full progress-gradient w-0 transition-all duration-500"></div>
+                </div>
+                <div class="text-right text-xs text-gray-400 mt-1">Progress: <span id="level-indicator">1/12</span></div>
+            </div>
+
+        </div>
+
+        <!-- 3. END SCREEN -->
+        <div id="end-screen" class="hidden flex-grow flex flex-col items-center justify-start text-center z-10 w-full py-4 overflow-y-auto">
+            
+            <h2 class="text-3xl md:text-4xl font-bold neon-text-pink mb-6 tracking-wider">Mission Complete!</h2>
+            
+            <!-- Current Run Stats -->
+            <div class="flex gap-4 mb-8">
+                <div class="bg-black/40 border border-[#ffde59] px-6 py-2 rounded-lg">
+                    <div class="text-xs text-gray-400 uppercase">Score</div>
+                    <div class="text-2xl text-[#ffde59] font-bold" id="final-score">0</div>
+                </div>
+                <div class="bg-black/40 border border-[#05d9e8] px-6 py-2 rounded-lg">
+                    <div class="text-xs text-gray-400 uppercase">Time</div>
+                    <div class="text-2xl text-[#05d9e8] font-bold"><span id="final-time">0</span>s</div>
+                </div>
+            </div>
+
+            <!-- Key Messages / Habits (UPDATED: Larger & Boxed) -->
+            <div class="w-full max-w-xl mb-8 bg-slate-900/80 p-8 rounded-2xl border-2 border-[#ffde59] shadow-[0_0_20px_rgba(255,222,89,0.2)] backdrop-blur-md transform hover:scale-[1.01] transition-transform duration-300">
+                <p class="text-[#ffde59] text-xl md:text-2xl font-bold mb-6 text-center uppercase tracking-wider border-b border-[#ffde59]/30 pb-4">
+                    ✨ Keep practising healthy habits ✨
+                </p>
+                <ul class="text-white text-lg md:text-xl space-y-4 text-left w-full px-2 md:px-6 font-medium">
+                     <li class="flex items-center gap-4 bg-white/5 p-3 rounded-lg"><span class="text-3xl filter drop-shadow-md">🔒</span> Set boundaries online</li>
+                     <li class="flex items-center gap-4 bg-white/5 p-3 rounded-lg"><span class="text-3xl filter drop-shadow-md">💭</span> Think before you act</li>
+                     <li class="flex items-center gap-4 bg-white/5 p-3 rounded-lg"><span class="text-3xl filter drop-shadow-md">🚩</span> Report inappropriate content</li>
+                     <li class="flex items-center gap-4 bg-white/5 p-3 rounded-lg"><span class="text-3xl filter drop-shadow-md">🤝</span> Engage and Support</li>
+                </ul>
+            </div>
+
+            <!-- Leaderboard -->
+            <div class="w-full max-w-md mb-6">
+                <h3 class="text-cyan-400 font-bold mb-2 text-lg uppercase tracking-widest text-left pl-2">🏆 Leaderboard</h3>
+                <div class="w-full overflow-hidden rounded-lg border border-white/20">
+                    <table class="w-full glass-table text-sm text-left">
+                        <thead>
+                            <tr class="text-xs uppercase">
+                                <th class="p-3">Rank</th>
+                                <th class="p-3">Name</th>
+                                <th class="p-3 text-right">Score</th>
+                                <th class="p-3 text-right">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 text-center">Ranked by Score, then Fastest Time.</p>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex flex-col md:flex-row gap-4 w-full justify-center px-8 mb-4">
+                <button onclick="resetGame()" class="btn-neon-pink px-8 py-3 rounded font-bold uppercase tracking-wider text-sm min-w-[140px] shadow-lg hover:shadow-pink-500/50">
+                    Play Again
+                </button>
+                <button onclick="location.reload()" class="btn-neon-yellow px-8 py-3 rounded font-bold uppercase tracking-wider text-sm min-w-[140px] shadow-lg hover:shadow-yellow-400/50">
+                    Back
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- GAME CONFIG ---
+        const MAX_LEVELS = 12;
+        // Format: { phrase: "HTML string with emoji", answer: "clean string", hint: "...", letterCount: N }
+        const levels = [
+            { phrase: "be <span class='text-4xl'>🥰</span> online", answer: "KIND", hint: "Nice to others", count: 4, explanation: "Being kind creates a positive digital world for everyone." },
+            { phrase: "<span class='text-4xl'>🛑</span> clicking links", answer: "STOP", hint: "Don't click it", count: 4, explanation: "Always pause and think before clicking links to avoid viruses." },
+            { phrase: "set <span class='text-4xl'>🔑</span> password", answer: "STRONG", hint: "Not weak", count: 6, explanation: "Strong passwords use a mix of letters, numbers, and symbols." },
+            { phrase: "don't <span class='text-4xl'>🗣️</span> info", answer: "SHARE", hint: "Keep it private", count: 5, explanation: "Personal info like your address should always stay private." },
+            { phrase: "<span class='text-4xl'>📣</span> harmful behaviours", answer: "REPORT", hint: "Tell an adult or mod", count: 6, explanation: "Reporting helps moderators remove bad content quickly." },
+            { phrase: "spot <span class='text-4xl'>❌</span> news", answer: "FAKE", hint: "It spreads lies, not facts", count: 4, explanation: "Fake news spreads false information. Always check your sources." },
+            { phrase: "keep <span class='text-4xl'>🔒</span> private", answer: "DATA", hint: "Your information", count: 4, explanation: "Your data is valuable. Protect it like money." },
+            { phrase: "seek <span class='text-4xl'>🆘</span> when unsure", answer: "HELP", hint: "Ask for assistance", count: 4, explanation: "Trusted adults can help solve tricky online problems." },
+            { phrase: "set <span class='text-4xl'>⚙️</span> settings", answer: "PRIVACY", hint: "Who sees your stuff", count: 7, explanation: "Privacy settings control who can see your posts and profile." },
+            { phrase: "check for <span class='text-4xl'>💸</span>", answer: "SCAMS", hint: "Tricks to steal money", count: 5, explanation: "If an online offer looks too good to be true, it probably is." },
+            { phrase: "manage <span class='text-4xl'>🌐</span> footprints", answer: "DIGITAL", hint: "Your online trace", count: 7, explanation: "Your digital footprint lasts forever, so post wisely." },
+            { phrase: "<span class='text-4xl'>🚩</span> inappropriate content", answer: "FLAG", hint: "Report bad stuff", count: 4, explanation: "Flagging alerts the platform to review harmful content." },
+            { phrase: "<span class='text-4xl'>⚖️</span> your time online", answer: "BALANCE", hint: "Manage screen time", count: 7, explanation: "Time offline is just as important as time online." },
+            { phrase: "reach out to a trusted <span class='text-4xl'>🙋🏻‍♀️</span>", answer: "PERSON", hint: "An adult who can help", count: 6, explanation: "A trusted adult can support you if you feel unsafe online." },
+            { phrase: "<span class='text-4xl'>🚫</span> abusive users", answer: "BLOCK", hint: "Stop them contacting you", count: 5, explanation: "Blocking stops bullies from contacting you again." },
+            { phrase: "<span class='text-4xl'>🤝</span> others in need", answer: "SUPPORT", hint: "Help your friends", count: 7, explanation: "Supporting friends makes the internet a safer place." },
+            { phrase: "<span class='text-4xl'>💭</span> before you post", answer: "THINK", hint: "Consider consequences", count: 5, explanation: "T.H.I.N.K: Is it True, Helpful, Inspiring, Necessary, Kind?" },
+            { phrase: "do not send <span class='text-4xl'>📸</span> to strangers", answer: "PHOTOS", hint: "Pictures of you", count: 6, explanation: "Once sent, you lose control of where your photos end up." }
+        ];
+
+        // --- STATE ---
+        let gameState = {
+            score: 0,
+            elapsedTime: 0,
+            timerInterval: null,
+            levelsPlayed: 0,
+            currentLevelIdx: 0,
+            shuffledLevels: [],
+            currentInput: "",
+            className: ""
+        };
+
+        // --- DOM REFS ---
+        const dom = {
+            screens: {
+                start: document.getElementById('start-screen'),
+                game: document.getElementById('game-screen'),
+                end: document.getElementById('end-screen')
+            },
+            modal: {
+                container: document.getElementById('explanation-modal'),
+                text: document.getElementById('explanation-text')
+            },
+            nameInput: document.getElementById('class-name-input'),
+            nameError: document.getElementById('name-error'),
+            clue: document.getElementById('clue-display'),
+            letterCount: document.getElementById('letter-count'),
+            inputContainer: document.getElementById('input-container'),
+            hiddenInput: document.getElementById('hidden-input'),
+            feedback: document.getElementById('feedback-msg'),
+            hintDisplay: document.getElementById('hint-display'),
+            hintBtn: document.getElementById('hint-btn'),
+            score: document.getElementById('score'),
+            timer: document.getElementById('timer'),
+            progressBar: document.getElementById('progress-bar'),
+            levelIndicator: document.getElementById('level-indicator'),
+            finalScore: document.getElementById('final-score'),
+            finalTime: document.getElementById('final-time'),
+            leaderboardBody: document.getElementById('leaderboard-body'),
+            audio: document.getElementById('bg-music'),
+            musicBtn: document.getElementById('music-btn')
+        };
+
+        // --- AUDIO FUNCTIONS ---
+        function toggleMusic() {
+            if (dom.audio.paused) {
+                dom.audio.volume = 0.4;
+                dom.audio.play().then(() => {
+                    dom.musicBtn.innerText = "🔊";
+                }).catch(e => console.log("Audio prevented", e));
+            } else {
+                dom.audio.pause();
+                dom.musicBtn.innerText = "🔇";
+            }
+        }
+
+        // --- CORE FUNCTIONS ---
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function resumeTimer() {
+            if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+            gameState.timerInterval = setInterval(() => {
+                gameState.elapsedTime++;
+                dom.timer.innerText = gameState.elapsedTime;
+            }, 1000);
+        }
+
+        function startGame() {
+            // Validate Name
+            const name = dom.nameInput.value.trim();
+            if (!name) {
+                dom.nameError.style.opacity = '1';
+                dom.nameInput.classList.add('border-red-500');
+                return;
+            }
+            
+            gameState.className = name;
+            gameState.score = 0;
+            gameState.elapsedTime = 0;
+            gameState.levelsPlayed = 0;
+            // Shuffle and slice to get random 12 unique questions
+            gameState.shuffledLevels = shuffle([...levels]).slice(0, MAX_LEVELS);
+            gameState.currentLevelIdx = 0;
+
+            // Audio Start
+            dom.audio.volume = 0.4;
+            dom.audio.play().then(() => {
+                dom.musicBtn.innerText = "🔊";
+            }).catch(e => {
+                console.log("Audio autoplay prevented", e);
+                dom.musicBtn.innerText = "🔇";
+            });
+
+            // UI Reset
+            updateScoreUI();
+            dom.timer.innerText = "0";
+            dom.progressBar.style.width = "0%";
+            dom.levelIndicator.innerText = `1/${MAX_LEVELS}`;
+            dom.nameError.style.opacity = '0';
+            dom.nameInput.classList.remove('border-red-500');
+
+            // Switch Screens
+            dom.screens.start.classList.add('hidden');
+            dom.screens.end.classList.add('hidden');
+            dom.screens.game.classList.remove('hidden');
+
+            loadLevel();
+            resumeTimer();
+            focusInput();
+        }
+
+        function loadLevel() {
+            // Check Victory Condition
+            if (gameState.levelsPlayed >= MAX_LEVELS) {
+                endGame();
+                return;
+            }
+
+            const level = gameState.shuffledLevels[gameState.currentLevelIdx];
+            
+            // Progress Update
+            const progressPct = (gameState.levelsPlayed / MAX_LEVELS) * 100;
+            dom.progressBar.style.width = `${progressPct}%`;
+            dom.levelIndicator.innerText = `${gameState.levelsPlayed + 1}/${MAX_LEVELS}`;
+
+            // Reset Input State - PRE-FILL FIRST LETTER
+            const firstLetter = level.answer[0];
+            gameState.currentInput = firstLetter;
+            dom.hiddenInput.value = firstLetter;
+            dom.hiddenInput.maxLength = level.answer.length;
+            
+            // Render UI
+            dom.clue.innerHTML = level.phrase;
+            dom.letterCount.innerText = `(${level.answer.length})`;
+            dom.hintDisplay.classList.add('hidden');
+            dom.feedback.style.opacity = '0';
+            
+            // Enable Hint
+            dom.hintBtn.disabled = false;
+            dom.hintBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            // Generate Boxes
+            dom.inputContainer.innerHTML = '';
+            for (let i = 0; i < level.answer.length; i++) {
+                const box = document.createElement('div');
+                box.className = "input-box w-12 h-14 md:w-14 md:h-16 rounded-lg flex items-center justify-center text-2xl md:text-3xl font-bold text-white uppercase select-none";
+                dom.inputContainer.appendChild(box);
+            }
+
+            updateBoxes();
+            focusInput();
+        }
+
+        // Handle Typing
+        dom.hiddenInput.addEventListener('input', (e) => {
+            const val = e.target.value.toUpperCase();
+            gameState.currentInput = val;
+            updateBoxes();
+        });
+
+        function updateBoxes() {
+            const boxes = dom.inputContainer.children;
+            const val = gameState.currentInput;
+
+            for (let i = 0; i < boxes.length; i++) {
+                if (i < val.length) {
+                    boxes[i].innerText = val[i];
+                    boxes[i].classList.add('filled', 'active');
+                    boxes[i].style.borderColor = "#ffde59";
+                } else {
+                    boxes[i].innerText = "";
+                    boxes[i].classList.remove('filled', 'active');
+                    boxes[i].style.borderColor = "#ffde59";
+                }
+                
+                if (i === val.length && i < boxes.length) {
+                     boxes[i].style.borderColor = "#fff"; 
+                }
+            }
+        }
+
+        function focusInput() {
+            // Prevent focus stealing if modal is open
+            if(dom.modal.container.classList.contains('hidden')) {
+                dom.hiddenInput.focus();
+            }
+        }
+
+        function submitAnswer() {
+            const level = gameState.shuffledLevels[gameState.currentLevelIdx];
+            const guess = gameState.currentInput.toUpperCase();
+            
+            if (guess === level.answer) {
+                handleCorrect();
+            } else {
+                handleIncorrect();
+            }
+        }
+
+        function handleCorrect() {
+            gameState.score += 10;
+            updateScoreUI();
+            
+            // Pause Timer so reading doesn't affect speed run
+            clearInterval(gameState.timerInterval);
+
+            // Visual success
+            const boxes = dom.inputContainer.children;
+            for(let box of boxes) {
+                box.style.borderColor = "#05d9e8";
+                box.style.color = "#05d9e8";
+                box.style.boxShadow = "0 0 15px #05d9e8";
+            }
+            
+            dom.feedback.innerText = "ACCESS GRANTED";
+            dom.feedback.classList.remove('text-red-500');
+            dom.feedback.classList.add('text-cyan-400');
+            dom.feedback.style.opacity = '1';
+
+            // Show Explanation Modal
+            setTimeout(() => {
+                const level = gameState.shuffledLevels[gameState.currentLevelIdx];
+                dom.modal.text.innerText = level.explanation;
+                dom.modal.container.classList.remove('hidden');
+            }, 800);
+        }
+
+        function nextLevel() {
+            dom.modal.container.classList.add('hidden');
+            
+            gameState.currentLevelIdx++;
+            gameState.levelsPlayed++;
+            
+            if (gameState.levelsPlayed >= MAX_LEVELS) {
+                endGame();
+            } else {
+                loadLevel();
+                resumeTimer();
+            }
+        }
+
+        function handleIncorrect() {
+            const boxes = dom.inputContainer.children;
+            for(let box of boxes) {
+                box.classList.add('shake');
+                box.style.borderColor = "#ff2a6d"; 
+            }
+            
+            dom.feedback.innerText = "ACCESS DENIED";
+            dom.feedback.classList.add('text-red-500');
+            dom.feedback.classList.remove('text-cyan-400');
+            dom.feedback.style.opacity = '1';
+
+            setTimeout(() => {
+                for(let box of boxes) {
+                    box.classList.remove('shake');
+                    box.style.borderColor = "#ffde59"; 
+                }
+                dom.feedback.style.opacity = '0';
+                focusInput();
+            }, 500);
+        }
+
+        function useHint() {
+            if (gameState.score >= 5) {
+                gameState.score -= 5;
+            } else {
+                gameState.score = 0;
+            }
+            updateScoreUI();
+
+            const level = gameState.shuffledLevels[gameState.currentLevelIdx];
+            dom.hintDisplay.innerText = `HINT: ${level.hint}`;
+            dom.hintDisplay.classList.remove('hidden');
+            
+            dom.hintBtn.disabled = true;
+            dom.hintBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            focusInput();
+        }
+
+        function skipLevel() {
+            gameState.currentLevelIdx++;
+            gameState.levelsPlayed++; 
+            loadLevel();
+        }
+
+        function updateScoreUI() {
+            dom.score.innerText = gameState.score;
+        }
+
+        // --- END GAME & LEADERBOARD LOGIC ---
+
+        function endGame() {
+            clearInterval(gameState.timerInterval);
+            dom.audio.pause(); 
+            dom.audio.currentTime = 0; 
+            
+            dom.screens.game.classList.add('hidden');
+            dom.screens.end.classList.remove('hidden');
+            
+            dom.finalScore.innerText = gameState.score;
+            dom.finalTime.innerText = gameState.elapsedTime;
+
+            saveScore(gameState.className, gameState.score, gameState.elapsedTime);
+            renderLeaderboard();
+        }
+
+        function saveScore(name, score, time) {
+            let leaderboard = JSON.parse(localStorage.getItem('emojiCluesLeaderboard')) || [];
+            
+            // Add new entry
+            leaderboard.push({ name, score, time, date: new Date().toISOString() });
+            
+            // Sort: High Score first, then Low Time
+            leaderboard.sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return a.time - b.time;
+            });
+
+            // Keep top 10
+            leaderboard = leaderboard.slice(0, 10);
+            
+            localStorage.setItem('emojiCluesLeaderboard', JSON.stringify(leaderboard));
+        }
+
+        function renderLeaderboard() {
+            const leaderboard = JSON.parse(localStorage.getItem('emojiCluesLeaderboard')) || [];
+            dom.leaderboardBody.innerHTML = '';
+
+            if (leaderboard.length === 0) {
+                dom.leaderboardBody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-400">No records yet. Be the first!</td></tr>';
+                return;
+            }
+
+            leaderboard.forEach((entry, index) => {
+                const isCurrentRun = entry.name === gameState.className && entry.score === gameState.score && entry.time === gameState.elapsedTime;
+                
+                const tr = document.createElement('tr');
+                if (isCurrentRun) tr.classList.add('bg-cyan-900/40', 'animate-pulse'); // Highlight current
+                
+                let rankIcon = index + 1;
+                if(index === 0) rankIcon = '🥇';
+                if(index === 1) rankIcon = '🥈';
+                if(index === 2) rankIcon = '🥉';
+
+                tr.innerHTML = `
+                    <td class="p-3 font-bold">${rankIcon}</td>
+                    <td class="p-3 text-cyan-200">${entry.name}</td>
+                    <td class="p-3 text-right font-mono text-[#ffde59]">${entry.score}</td>
+                    <td class="p-3 text-right font-mono text-gray-300">${entry.time}s</td>
+                `;
+                dom.leaderboardBody.appendChild(tr);
+            });
+        }
+
+        function resetGame() {
+            dom.screens.end.classList.add('hidden');
+            dom.screens.start.classList.remove('hidden');
+            dom.nameInput.value = ''; // Clear input for next class
+        }
+        
+        // Key listener
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                // If Modal is open, Enter clicks Next Level
+                if(!dom.modal.container.classList.contains('hidden')){
+                    nextLevel();
+                    return;
+                }
+
+                if (!dom.screens.start.classList.contains('hidden')) {
+                    startGame();
+                } else if (!dom.screens.game.classList.contains('hidden')) {
+                    submitAnswer();
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
